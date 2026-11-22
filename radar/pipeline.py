@@ -100,8 +100,16 @@ def evaluate_job(s: Session, job: Job, profile: Profile, settings: dict, analyze
     detail = (job.fields or {}).get("_detay", "tam")
     fields = extract_fields(job.title, job.description or "", today)
     fields["_detay"] = detail
-    ok, why = prefilter(job.title, job.description or "", profile, fields, job.published_at,
-                        int(settings["tarama"]["ilan_max_yas_gun"]), today)
+    is_kamu = job.sector == "kamu"
+    if is_kamu:
+        from .kamu import find_deadline
+        dl = fields.get("son_basvuru") or find_deadline(f"{job.title}\n{job.description or ''}")
+        if dl:
+            fields["son_basvuru"] = dl
+        ok, why = True, "Kamu ilanı"
+    else:
+        ok, why = prefilter(job.title, job.description or "", profile, fields, job.published_at,
+                            int(settings["tarama"]["ilan_max_yas_gun"]), today)
     new_hash = req_hash(fields) + hashlib.sha256((job.description or "").encode()).hexdigest()[:8]
     job.fields = fields
     if fields.get("son_basvuru") and not job.deadline:
@@ -112,15 +120,22 @@ def evaluate_job(s: Session, job: Job, profile: Profile, settings: dict, analyze
     if job.latest_eval and job.content_hash == new_hash and job.latest_eval.profile_version == pv:
         return None  # değişiklik yok: tekrar analiz yapılmaz
     job.content_hash = new_hash
-    r = evaluate(job.title, job.description or "", fields, profile, settings, city=job.city, work_model=job.work_model,
-                 published=job.published_at, detail_level=detail, today=today)
+    if is_kamu:
+        from .kamu import evaluate_kamu
+        r = evaluate_kamu(job.title, job.description or "", fields, profile, settings, today=today, detail_level=detail)
+        if r.extra.get("ilgililik", 0) == 0:
+            ok, why = False, "Kamu ilanında senin alanınla ilgili kadro görünmüyor"
+    else:
+        r = evaluate(job.title, job.description or "", fields, profile, settings, city=job.city, work_model=job.work_model,
+                     published=job.published_at, detail_level=detail, today=today)
     engine = "kural"
     if not ok:
         r.category = f"Ön elemede elendi: {why}"
     elif analyzer and analyzer.enabled and r.location_tier in ("ev", "yakin", "uzaktan", "bilinmiyor", "uzak_izlenen"):
         try:
             ai = analyzer.analyze(s, job_text=f"{job.title}\n{job.company or ''}\n{job.description}",
-                                  content_hash=new_hash, profile_summary=profile.anonymous_summary(), profile_version=pv)
+                                  content_hash=new_hash, profile_summary=profile.anonymous_summary(), profile_version=pv,
+                                  kamu=is_kamu)
         except (BudgetExceeded, ProviderError) as e:
             ai = None
             r.explanation["dikkat"].append(f"Yapay zekâ analizi yapılamadı ({e}); kural tabanlı sonuç gösteriliyor.")
@@ -138,6 +153,8 @@ def evaluate_job(s: Session, job: Job, profile: Profile, settings: dict, analyze
             if r.gate == "Uygun" and any(c.status == VERIFY for c in r.checks):
                 r.gate = "Doğrulanmalı"
             r.explanation["ai_yorum"] = ai.get("yorum", "")
+            if is_kamu and ai.get("uygun_kadrolar"):
+                r.explanation["uygun_kadrolar"] = [k for k in ai["uygun_kadrolar"] if isinstance(k, dict)][:5]
             r.explanation["dikkat"] += [d for d in ai.get("dikkat", []) if isinstance(d, str)][:4]
     ev = Evaluation(job_id=job.id, engine=engine, profile_version=pv, score=r.score, subscores=r.subscores, gate=r.gate,
                     category=r.category, career_track=r.career_track if ok else None,
@@ -155,7 +172,8 @@ def maybe_queue(s: Session, job: Job, ev: Evaluation, settings: dict, change: st
         return False
     if not ev.explanation.get("on_eleme") or ev.gate == "Başvurulamaz" or job.status != "aktif":
         return False
-    if ev.score < float(settings["bildirim"]["min_puan"]):
+    min_score = settings["bildirim"].get("kamu_min_puan", 55) if job.sector == "kamu" else settings["bildirim"]["min_puan"]
+    if ev.score < float(min_score):
         return False
     prev = s.scalars(select(Notification).where(Notification.job_id == job.id).order_by(Notification.id)).all()
     if not prev:

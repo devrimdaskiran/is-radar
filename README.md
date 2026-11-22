@@ -11,6 +11,11 @@ Gündüz her 30 dakikada bir (06:00–23:30), gece bir kez GitHub Actions şunla
    - Kariyer.net, Eleman.net, İşin Olsun il listeleri (Gaziantep, Kahramanmaraş, Osmaniye, Hatay, Adana, Kilis).
    - Gemini + Google Arama ile keşif. Gelen her bağlantı açılıp doğrulanır.
    - İsteğe bağlı: Jooble API ve Gmail'e gelen iş alarmları (LinkedIn/Indeed).
+   - **Kamu** (2 saatte bir):
+     - memurlar.net kategorileri: KPSS-B, 4/B, daimi ve geçici işçi (İŞKUR), askeri (MSB, Jandarma, Sahil Güvenlik), öğrenci alımı (POMEM, PMYO, MSÜ), belediye ve genel ilanlar.
+     - Polis Akademisi, MSB Personel Temin, MİT Kariyer, Kariyer Kapısı ve Kamu İlan Portalı.
+     - Gemini ile Google'da kamu ilanı araması.
+     - Kamu ilanları ayrı kurallarla değerlendirilir: bölüm, ön lisans, KPSS P93 ve yaş şartı. Telegram'a **🏛 KAMU İLANI** başlığıyla gelir.
 2. **İlanı okur ve şartları çıkarır.** Eğitim seviyesi, bölüm, deneyim, askerlik, ehliyet, vardiya ve ikamet, ilandan birebir alıntıyla çıkarılır.
 3. **Zorunlu şartları ayrı kontrol eder.** "En az lisans", "askerliğini tamamlamış" ya da zorunlu "en az 3 yıl deneyim" varsa ilan **gönderilmez**, "Kariyer Fırsatları"na yazılır.
 4. **100 üzerinden puanlar.** Ağırlıklar: Eğitim %30, Teknik %25, Pozisyon %15, Deneyim %10, Konum %10, Diğer %10. İstenirse **Gemini** (ücretsiz) ilanı ayrıca yorumlar.
@@ -41,7 +46,7 @@ Hemen denemek için: **Actions → AI Career Radar → Run workflow**.
 
 ## Telegram komutları
 
-`/jobs` `/best` `/today` `/week` `/career` `/search Gaziantep bakım` `/favorites` `/applications` `/stats`
+`/jobs` `/kamu` `/best` `/today` `/week` `/career` `/search Gaziantep bakım` `/favorites` `/applications` `/stats`
 `/sources` `/settings` `/profile` `/pause` `/resume` `/help`. Doğal dilde de yazabilirsin, örneğin
 *"Gaziantep'te deneyim istemeyen işler"* ya da *"son 3 günde otomasyon ilanları"*.
 Bot dönemsel çalıştığı için cevaplar birkaç dakika (en fazla bir sonraki tura kadar) gecikebilir.
@@ -50,10 +55,10 @@ Bot dönemsel çalıştığı için cevaplar birkaç dakika (en fazla bir sonrak
 
 - `radar/collectors/`: kaynak modülleri (site listeleri, Gemini arama, Jooble, e-posta alarmları, kariyer sayfaları)
 - `radar/extract.py`: ilandan şart çıkarma
-- `radar/matching.py`: zorunlu şart kapısı ve puanlama
+- `radar/matching.py`: zorunlu şart kapısı ve puanlama · `radar/kamu.py`: kamu ilanı değerlendirmesi
 - `radar/pipeline.py`: toplama, tekrar önleme ve bildirim kuyruğu
 - `radar/runner.py`: GitHub Actions turu (Telegram etkileşimi, raporlar)
 - `configs/sources.yaml`: kaynaklar, iller, aramalar · `configs/settings.yaml`: puan ağırlıkları, bildirim saatleri
-- `tests/`: 63 test (gerçek Gaziantep ilanlarından alınmış örneklerle)
+- `tests/`: 71 test (gerçek Gaziantep ilanlarından alınmış örneklerle)
 
 Bilgisayarda sürekli çalışan bot sürümü de mevcuttur (`python -m radar run`), ama gerekli değildir.

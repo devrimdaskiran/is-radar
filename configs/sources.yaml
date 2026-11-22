@@ -34,13 +34,15 @@ kaynaklar:
     siklik_dakika: 240
     gun: 3
     max_dogrulama: 15
-    izinli_alanlar: ["kariyer.net", "eleman.net", "secretcv.com", "yenibiris.com", "isinolsun.com", "iskur.gov.tr",
+    izinli_alanlar: ["kariyer.net", "eleman.net", "secretcv.com", "yenibiris.com", "isinolsun.com", "iskur.gov.tr", "indeed.com",
                      "aselsan.com", "tusas.com", "roketsan.com", "baykartech.com", "linkedin.com/jobs"]
     aramalar:
       - "Gaziantep mekatronik teknikeri iş ilanı"
       - "Gaziantep elektrik elektronik teknisyeni bakım iş ilanı"
       - "Gaziantep otomasyon teknisyeni iş ilanı"
       - "Kahramanmaraş Osmaniye Adana mekatronik elektrik teknikeri iş ilanı"
+      - "İŞKUR Gaziantep elektrik elektronik teknisyeni bakım iş ilanı"
+      - "linkedin jobs Gaziantep mekatronik teknikeri"
 
   # 3) Jooble resmi API (isteğe bağlı: JOOBLE_API_KEY)
   - ad: jooble
@@ -78,3 +80,43 @@ kaynaklar:
     sirketler:
       - {ad: "ASELSAN", liste_url: "", ilan_link_deseni: ""}
       - {ad: "Baykar", liste_url: "", ilan_link_deseni: ""}
+
+  # ===================== KAMU =====================
+  # 6) Kamu ilan ve duyuru sayfaları. memurlar.net; Resmî Gazete, Kamuilan, İŞKUR kamu işçi alımları,
+  #    MSB/Jandarma/Sahil Güvenlik, belediye ve üniversite ilanlarını kategorilerle toplar.
+  - ad: kamu_duyurulari
+    tur: announcements
+    aktif: true
+    siklik_dakika: 120
+    bekleme_sn: 2
+    max_detay: 40
+    sayfalar:
+      - {ad: "memurlar.net – KPSS-B (memur/sözleşmeli)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/kpss-b-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – 4/B sözleşmeli", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/4b-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Daimi işçi (İŞKUR)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/daimi-isci-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Geçici işçi", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/gecici-isci-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Askeri (MSB, Jandarma, Sahil Güvenlik)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/askeri-ilanlar/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Öğrenci alımı (POMEM, PMYO, MSÜ, astsubay)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/ogrenci-alim-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Mahalli (belediye)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/mahalli-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Genel ilanlar", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/genel-ilanlar/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "memurlar.net – Günün ilanları", kaynak: memurlar.net, url: "https://ilan.memurlar.net/", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
+      - {ad: "Polis Akademisi (POMEM/PMYO)", kaynak: pa.edu.tr, kurum: "Polis Akademisi", url: "https://www.pa.edu.tr/", anahtar: ["pomem", "pmyo", "alim", "aday belirleme", "basvuru"]}
+      - {ad: "MSB Personel Temin", kaynak: msb, kurum: "Millî Savunma Bakanlığı", url: "https://personeltemin.msb.gov.tr/", anahtar: ["alim", "temin", "ilan", "isci", "memur", "astsubay", "uzman erbas", "sozlesmeli"]}
+      - {ad: "MİT Kariyer", kaynak: mit, kurum: "Millî İstihbarat Teşkilatı", url: "https://www.mit.gov.tr/kariyer.html", ilan_deseni: "mit\\.gov\\.tr/((?:ozgecmis-gonder_[a-z\\-]+_\\d+)|havacilik-teknisyeni|istihbarat-uzmani)\\.html"}
+      - {ad: "Kariyer Kapısı (Kamu İşe Alım)", kaynak: kariyerkapisi, url: "https://www.kariyerkapisi.gov.tr/isealim", anahtar: ["alim", "ilan", "personel", "isci", "tekniker", "teknisyen"]}
+      - {ad: "Kamu İlan Portalı (SBB)", kaynak: kamuilan, url: "https://kamuilan.sbb.gov.tr/", anahtar: ["alim", "ilan", "personel", "isci"]}
+
+  # 7) Gemini + Google ile kamu ilanı keşfi (Kariyer Kapısı, İŞKUR, ilan.gov.tr, belediye ve üniversite siteleri)
+  - ad: gemini_kamu
+    tur: gemini_search
+    aktif: true
+    siklik_dakika: 360
+    sektor: kamu
+    gun: 5
+    max_dogrulama: 10
+    izinli_alanlar: ["gov.tr", "edu.tr", "bel.tr", "memurlar.net", "ilan.gov.tr", "kariyerkapisi"]
+    aramalar:
+      - "ön lisans mekatronik elektrik elektronik tekniker kamu personel alımı ilanı"
+      - "Gaziantep belediyesi işçi alımı elektrik teknisyeni ilanı"
+      - "üniversite sözleşmeli personel alımı tekniker ön lisans elektrik elektronik mekatronik"
+      - "İŞKUR kamu işçi alımı elektrik bakım onarım Gaziantep"

@@ -25,6 +25,7 @@ class JobFilter:
     sort: str = "score"            # score | date
     career: bool = False
     company: str | None = None
+    sector: str | None = None      # None: hepsi, 'kamu' ya da 'ozel'
 
 
 SECTOR_WORDS = {
@@ -65,6 +66,9 @@ def parse_query(text: str) -> JobFilter:
     for sk in SKILL_WORDS:
         if sk in t:
             f.keywords.append(sk)
+    if re.search(r"(?<![a-z])(kamu|memur|devlet|kpss|belediye|pomem|msb|mit|universite)", t):
+        f.sector = "kamu"
+        f.keywords = [k for k in f.keywords if k not in ("tekniker",)] or f.keywords
     if re.search(r"yeni|en son|son acilan", t):
         f.sort = "date"
     return f
@@ -106,6 +110,10 @@ def find_jobs(s: Session, f: JobFilter, now: datetime | None = None) -> list[tup
             d = (job.fields or {}).get("deneyim") or {}
             if d.get("tur") not in ("aranmiyor", "tercihen"):
                 continue
+        if f.sector == "kamu" and job.sector != "kamu":
+            continue
+        if f.sector == "ozel" and job.sector == "kamu":
+            continue
         if f.company and fold(f.company) not in fold(job.company or ""):
             continue
         out.append((job, ev))

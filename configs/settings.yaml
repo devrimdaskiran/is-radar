@@ -11,7 +11,8 @@ puan_agirliklari:        # toplam 1.0
 
 bildirim:
   aktif: true
-  min_puan: 60            # bu puanın altı bildirilmez
+  min_puan: 60            # bu puanın altı bildirilmez (özel sektör)
+  kamu_min_puan: 55       # kamu ilanları için
   anlik: false            # true: sessiz saatleri yok say
   sessiz_baslangic: "23:00"
   sessiz_bitis: "08:00"

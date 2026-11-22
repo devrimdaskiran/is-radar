@@ -33,7 +33,7 @@ TZ = ZoneInfo("Europe/Istanbul")
 STATE_ENC = ROOT / "state" / "radar.db.enc"
 DB = DATA_DIR / "radar.db"
 
-COMMANDS = [("jobs", "Uygun ilanlar"), ("best", "En yüksek puanlılar"), ("today", "Bugün bulunanlar"),
+COMMANDS = [("jobs", "Uygun özel sektör ilanları"), ("kamu", "Kamu ilanları (KPSS, POMEM, MSB, belediye...)"), ("best", "En yüksek puanlılar"), ("today", "Bugün bulunanlar"),
             ("week", "Son 7 gün"), ("career", "Kariyer fırsatları"), ("search", "Ara: /search Gaziantep bakım"),
             ("favorites", "Favoriler"), ("applications", "Başvurularım"), ("stats", "İstatistikler"),
             ("sources", "Kaynak durumu"), ("settings", "Ayarlar"), ("profile", "Profilim"), ("pause", "Duraklat"),
@@ -155,7 +155,10 @@ class Runner:
                       "\n\nDoğal dilde de yazabilirsin: “Gaziantep'te deneyim istemeyen işler”, “son 3 günde otomasyon ilanları”."
                       "\n\n<i>Not: Bot GitHub üzerinde dönemsel çalıştığı için cevaplar birkaç dakika gecikebilir.</i>")
         elif cmd == "/jobs":
-            self.send(self.list_msg(s, "Uygun ilanlar", JobFilter(min_score=st["bildirim"]["min_puan"], limit=15)))
+            self.send(self.list_msg(s, "Uygun özel sektör ilanları", JobFilter(min_score=st["bildirim"]["min_puan"], limit=15, sector="ozel")))
+        elif cmd == "/kamu":
+            self.send(self.list_msg(s, "Kamu ilanları", JobFilter(min_score=st["bildirim"].get("kamu_min_puan", 55), limit=15,
+                                                                  sector="kamu", sort="date")))
         elif cmd == "/best":
             self.send(self.list_msg(s, "En yüksek puanlı ilanlar", JobFilter(limit=10)))
         elif cmd == "/today":
@@ -306,7 +309,8 @@ class Runner:
 
     def welcome(self, s) -> str:
         return ("👋 <b>AI Career Radar bağlandı!</b>\n\nArtık GitHub sunucularında kendi kendine çalışıyorum. "
-                "Gündüz her 30 dakikada bir ilanları tarayıp profiline uyanları buraya göndereceğim. "
+                "Gündüz her 30 dakikada bir özel sektör ilanlarını, 2 saatte bir kamu ilanlarını (KPSS, POMEM, MSB, MİT, "
+                "belediye, üniversite, İŞKUR işçi alımları) tarayıp profiline uyanları buraya göndereceğim. "
                 "Gece bulunanlar sabah 08:00'de gelir.\n\n" + self.sources_text(s) + "\n\nKomutlar için /help")
 
     # ---- bildirim / raporlar

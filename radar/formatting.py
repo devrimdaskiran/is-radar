@@ -14,6 +14,8 @@ def fmt_date(d) -> str:
 
 def card(job, ev, reason: str = "yeni") -> str:
     sub = ev.subscores
+    if getattr(job, "sector", None) == "kamu":
+        return kamu_card(job, ev, reason)
     head = "🚀 <b>YENİ İŞ FIRSATI!</b>" if reason == "yeni" else "🔄 <b>İLAN GÜNCELLENDİ</b>"
     gate_line = {"Uygun": "✅ Zorunlu şartlar: karşılanıyor",
                  "Doğrulanmalı": "⚠️ Zorunlu şartlar: bazıları doğrulanmalı",
@@ -61,6 +63,7 @@ def keyboard_rows(job) -> list[list[dict]]:
 
 def short(job, ev) -> str:
     flag = {"Uygun": "✅", "Doğrulanmalı": "⚠️", "Başvurulamaz": "⛔"}.get(ev.gate, "")
+    flag = ("🏛" + flag) if getattr(job, "sector", None) == "kamu" else flag
     return f"{flag} <b>%{ev.score:.0f}</b> {E(job.title)} — {E(job.company or '?')} ({E(job.city or '?')}) /ilan_{job.id}"
 
 
@@ -74,3 +77,25 @@ def in_quiet_hours(st: dict, now: datetime) -> bool:
     return (s <= t or t < e) if s > e else (s <= t < e)
 
 
+
+
+def kamu_card(job, ev, reason: str = "yeni") -> str:
+    head = "🏛 <b>KAMU İLANI</b>" if reason == "yeni" else "🔄 <b>KAMU İLANI GÜNCELLENDİ</b>"
+    gate_line = {"Uygun": "✅ Görünen şartları karşılıyorsun",
+                 "Doğrulanmalı": "⚠️ Bazı şartları kendin doğrulamalısın",
+                 "Başvurulamaz": "⛔ Bir zorunlu şart karşılanmıyor"}.get(ev.gate, ev.gate)
+    ex = ev.explanation
+    lines = [head, "", f"<b>{E(job.title)}</b>", f"<b>Uygunluk:</b> %{ev.score:.0f} ({E(ev.category)})", gate_line]
+    if ex.get("uygun_kadrolar"):
+        lines += ["", "<b>SANA UYGUN KADROLAR (yapay zekâ, ilandan alıntıyla):</b>"]
+        lines += [f"• {E(str(k.get('kadro', '')))} {('(' + E(str(k['adet'])) + ')') if k.get('adet') else ''}" for k in ex["uygun_kadrolar"]]
+    if ex.get("neden_uygun"):
+        lines += ["", "<b>NEDEN BAKMALISIN?</b>"] + [f"• {E(x)}" for x in ex["neden_uygun"][:4]]
+    att = (ex.get("karsilanmayan") or []) + (ex.get("dikkat") or [])
+    if att:
+        lines += ["", "<b>KONTROL ET:</b>"] + [f"• {E(x)}" for x in att[:5]]
+    if ex.get("ai_yorum"):
+        lines += ["", f"🤖 <i>{E(ex['ai_yorum'])}</i>"]
+    lines += ["", f"Yayın: {fmt_date(job.published_at or job.first_seen)} · Son başvuru: {fmt_date(job.deadline)}",
+              f"Kaynak: {E(', '.join(sorted({l.source for l in job.links})))}"]
+    return "\n".join(lines)

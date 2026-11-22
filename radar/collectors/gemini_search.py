@@ -79,7 +79,7 @@ class GeminiSearchCollector(Collector):
             jl = parse_jobposting_html(r.text, url)
             if jl:
                 p = jl[0]
-                p.source, p.url = "gemini_arama", url
+                p.source, p.url, p.sector = self.name, url, self.cfg.get("sektor")
                 p.external_id = re.sub(r"\W+", "-", url)[-120:]
                 out.append(p)
                 continue
@@ -89,7 +89,7 @@ class GeminiSearchCollector(Collector):
             title = it.get("baslik") or ""
             if fold(title)[:15] and fold(title)[:15] not in fold(r.text):
                 title = (re.search(r"<title>(.*?)</title>", r.text, re.S | re.I) or [None, title])[1] or title
-            out.append(RawPosting(source="gemini_arama", external_id=re.sub(r"\W+", "-", url)[-120:], url=url,
+            out.append(RawPosting(source=self.name, sector=self.cfg.get("sektor"), external_id=re.sub(r"\W+", "-", url)[-120:], url=url,
                                   title=title.strip()[:200], company=it.get("sirket") or None, city=it.get("sehir") or None,
                                   description=text, detail_level="tam"))
         return out

@@ -8,6 +8,7 @@ from logging.handlers import RotatingFileHandler
 from sqlalchemy import select
 
 from .collectors.base import Collector
+from .collectors.announcements import AnnouncementCollector
 from .collectors.career_jsonld import CareerJsonLdCollector
 from .collectors.gemini_search import GeminiSearchCollector
 from .collectors.site_listing import SiteListingCollector
@@ -20,7 +21,8 @@ from .llm.providers import PROVIDERS, ProviderError
 from .profile import Profile, load_profile
 
 COLLECTORS = {"jooble_api": JoobleCollector, "imap_alerts": ImapAlertsCollector, "career_jsonld": CareerJsonLdCollector,
-              "site_listing": SiteListingCollector, "gemini_search": GeminiSearchCollector}
+              "site_listing": SiteListingCollector, "gemini_search": GeminiSearchCollector,
+              "announcements": AnnouncementCollector}
 
 
 def setup_logging() -> None:
@@ -84,7 +86,14 @@ class App:
                     continue
                 if not force and src.last_run and datetime.now() - src.last_run < timedelta(minutes=src.interval_min - 1):
                     continue
-                col = cls(c, self.secrets, profile=self.profile) if cls is SiteListingCollector else cls(c, self.secrets)
+                if cls is SiteListingCollector:
+                    col = cls(c, self.secrets, profile=self.profile)
+                elif cls is AnnouncementCollector:
+                    from .db import JobLink
+                    known = {f"{a}:{b}" for a, b in s.execute(select(JobLink.source, JobLink.external_id))}
+                    col = cls(c, self.secrets, known=known)
+                else:
+                    col = cls(c, self.secrets)
                 col.name = c["ad"]
                 out.append(col)
         return out
