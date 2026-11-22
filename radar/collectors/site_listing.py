@@ -85,6 +85,7 @@ class SiteListingCollector(Collector):
             details = 0
             site_ok = False
             fails = 0
+            detail_blocked = False
             for city in self.cfg.get("iller", []):
                 if fails >= 2 and not site_ok:
                     errors.append(f"{site['ad']}: üst üste erişilemedi, bu tur atlandı")
@@ -126,7 +127,7 @@ class SiteListingCollector(Collector):
                         post = RawPosting(source=site["ad"], external_id=ext, url=href, title=title[:200],
                                           city=city.replace("-", " ").title() if city.isascii() else city,
                                           detail_level="özet", raw={"liste": url})
-                        if details < max_detail:
+                        if details < max_detail and not detail_blocked:
                             details += 1
                             try:
                                 d = self.http.get(href)
@@ -147,6 +148,8 @@ class SiteListingCollector(Collector):
                                         post.title = h1.get_text(" ", strip=True)[:200]
                             except CollectorError as e:
                                 errors.append(f"{site['ad']} detay: {e}")
+                                if "engellendi" in str(e) or "CAPTCHA" in str(e):
+                                    detail_blocked = True   # site detay sayfalarını engelliyor: liste bilgisiyle devam
                             except Exception as e:  # noqa: BLE001
                                 log.warning("Detay okunamadı %s: %s", href, e)
                         out.append(post)

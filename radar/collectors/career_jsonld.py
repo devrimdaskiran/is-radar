@@ -50,13 +50,19 @@ def parse_jobposting_html(html: str, url: str, company_hint: str | None = None) 
             data = json.loads(tag.string or tag.get_text() or "{}")
         except json.JSONDecodeError:
             continue
+        def first(x):
+            while isinstance(x, list):
+                x = x[0] if x else {}
+            return x if isinstance(x, dict) else ({"name": x} if isinstance(x, str) else {})
+
         for jp in _iter_jobpostings(data):
-            org = jp.get("hiringOrganization") or {}
-            loc = jp.get("jobLocation") or {}
-            if isinstance(loc, list):
-                loc = loc[0] if loc else {}
-            addr = (loc.get("address") or {}) if isinstance(loc, dict) else {}
-            desc = strip_html(jp.get("description", ""))
+            org = first(jp.get("hiringOrganization"))
+            loc = first(jp.get("jobLocation"))
+            addr = first(loc.get("address")) if loc else {}
+            ident = jp.get("identifier")
+            if isinstance(ident, list):
+                ident = ident[0] if ident else None
+            desc = strip_html(str(jp.get("description", "")))
             for extra in ("educationRequirements", "experienceRequirements", "qualifications"):
                 v = jp.get(extra)
                 if isinstance(v, dict):
@@ -66,10 +72,9 @@ def parse_jobposting_html(html: str, url: str, company_hint: str | None = None) 
             salary = jp.get("baseSalary")
             out.append(RawPosting(
                 source="kariyer_sayfasi",
-                external_id=str(jp.get("identifier", {}).get("value") if isinstance(jp.get("identifier"), dict)
-                                else jp.get("identifier") or url),
+                external_id=str(ident.get("value") if isinstance(ident, dict) else (ident or url)),
                 url=jp.get("url") or url,
-                title=strip_html(jp.get("title", "")),
+                title=strip_html(str(jp.get("title", ""))),
                 company=(org.get("name") if isinstance(org, dict) else None) or company_hint,
                 city=addr.get("addressLocality") or addr.get("addressRegion"),
                 description=desc,

@@ -88,6 +88,10 @@ class GeminiProvider(Provider):
             nums = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", n)] or [0]
             return (("flash" in n) and ("lite" not in n), "flash" in n, nums[0])
         good = sorted((n for n in names if "gemini" in n and not any(b in n for b in self.BAD)), key=score, reverse=True)
+        if len(good) < 2:   # kararlı model azsa önizleme sürümlerini de yedek olarak ekle
+            bad2 = tuple(b for b in self.BAD if b not in ("preview",))
+            good += sorted((n for n in names if "gemini" in n and n not in good and not any(b in n for b in bad2)),
+                           key=score, reverse=True)
         if not good:
             good = sorted((n for n in names if "gemini" in n and "embedding" not in n), key=score, reverse=True)
         if not good:
@@ -115,7 +119,11 @@ class GeminiProvider(Provider):
                 if r.status_code == 400 and "thinking" in r.text.lower() and cfg_try == 0:
                     continue
                 if r.status_code in (429, 500, 503):
-                    last = f"{model}: HTTP {r.status_code} (kota/yoğunluk)"
+                    try:
+                        msg = r.json().get("error", {}).get("message", "")[:160]
+                    except ValueError:
+                        msg = ""
+                    last = f"{model}: HTTP {r.status_code} (kota/yoğunluk) {msg}"
                     break
                 if r.status_code != 200:
                     last = f"{model}: HTTP {r.status_code} {r.text[:150]}"
