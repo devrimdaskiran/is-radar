@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from ..textnorm import fold, strip_html
+from ..textnorm import fold, split_title_company, strip_html
 from .base import Collector, CollectorError, PoliteClient, RawPosting
 from .career_jsonld import parse_jobposting_html
 
@@ -122,9 +122,10 @@ class SiteListingCollector(Collector):
                         if key in seen or not title:
                             continue
                         seen.add(key)
-                        if not self._relevant(title):
+                        if not self._relevant(split_title_company(title)[0]):
                             continue
-                        post = RawPosting(source=site["ad"], external_id=ext, url=href, title=title[:200],
+                        title, comp = split_title_company(title)
+                        post = RawPosting(source=site["ad"], external_id=ext, url=href, title=title[:200], company=comp,
                                           city=city.replace("-", " ").title() if city.isascii() else city,
                                           detail_level="özet", raw={"liste": url})
                         if details < max_detail and not detail_blocked:

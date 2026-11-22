@@ -15,6 +15,9 @@ from .textnorm import fold
 
 OK, NO, VERIFY, UNKNOWN = "Karşılıyor", "Karşılamıyor", "Doğrulanmalı", "Belirtilmemiş"
 STATUS_SCORE = {OK: 100, UNKNOWN: 80, VERIFY: 50, NO: 0}
+# Tek başına teknik pozisyonu göstermeyen genel unvan kelimeleri
+WEAK_KW = {"uretim", "montaj", "kalite", "test", "saha", "enerji", "kontrol", "teknik", "servis", "destek"}
+GENERIC_ROLE = {"teknikeri", "teknisyeni", "personeli", "uzmani", "elemani", "operatoru", "sistemler", "sistem", "veya"}
 
 # Profildeki diploma programlarının ilanlardaki karşılıkları
 PROGRAM_CANON = {
@@ -103,7 +106,7 @@ def check_education(fields: dict, profile: Profile) -> tuple[Check, float, list[
     edu = fields.get("egitim")
     matched_notes: list[str] = []
     if not edu:
-        return Check("Eğitim", UNKNOWN, "İlanda eğitim şartı belirtilmemiş."), 65, matched_notes
+        return Check("Eğitim", UNKNOWN, "İlanda eğitim şartı belirtilmemiş."), 50, matched_notes
     min_lv = edu.get("min_seviye")
     min_rank = LEVEL_RANK.get(min_lv, 0)
     depts = edu.get("bolumler", [])
@@ -119,7 +122,7 @@ def check_education(fields: dict, profile: Profile) -> tuple[Check, float, list[
             cand = (NO, 0, f"İlan en az {LEVEL_TR[min_lv]} istiyor; {dip['program']} diploman {LEVEL_TR[dip['seviye']]}.",
                     edu.get("kanit"))
         elif not depts:
-            cand = (OK, 85, f"{LEVEL_TR[dip['seviye']].capitalize()} {dip['program']} diploman seviye şartını karşılıyor; "
+            cand = (OK, 70, f"{LEVEL_TR[dip['seviye']].capitalize()} {dip['program']} diploman seviye şartını karşılıyor; "
                     f"bölüm belirtilmemiş.", edu.get("kanit"))
         elif prog in nonEng:
             ev = next(d["kanit"] for d in depts if d["ad"] == prog and not d["muhendislik"])
@@ -152,13 +155,18 @@ def evaluate(title: str, description: str, fields: dict, profile: Profile, setti
 
     # Eğitim
     edu_check, E, edu_notes = check_education(fields, profile)
+    ftitle = fold(title)
+    if re.search(r"muhendis", ftitle) and not re.search(r"tekniker|teknisyen", ftitle) and edu_check.status != NO and \
+            not re.search(r"on ?lisans|onlisans|meslek yuksek|myo", fold(description or "")):
+        edu_check, E = Check("Eğitim", NO, "Mühendis unvanı lisans (4 yıllık) mezuniyet gerektirir; ön lisans diploman yetmez.",
+                             None), 0
     checks.append(edu_check)
     explanation["egitim_ortusen"] = edu_notes
 
     # Deneyim
     exp = fields.get("deneyim")
     if not exp:
-        D = 75
+        D = 60
         checks.append(Check("Deneyim", UNKNOWN, "Deneyim şartı belirtilmemiş."))
     elif exp["tur"] == "aranmiyor":
         D = 100
@@ -245,7 +253,7 @@ def evaluate(title: str, description: str, fields: dict, profile: Profile, setti
     miss_sk = find_skills(text, profile.watch_missing)
     explanation["beceri_ortusen"] = [f"{s['ad']} ({s['seviye']})" for s in have_sk]
     m, n = len(have_sk), len(miss_sk)
-    T = 60 if m + n == 0 else max(20, min(100, round(100 * (m + 0.3) / (m + n + 0.3))))
+    T = 40 if m + n == 0 else max(20, min(100, round(100 * (m + 0.3) / (m + n + 0.3))))
     for s in miss_sk:
         explanation["dikkat"].append(f"{s['ad']} isteniyor/geçiyor; profilinde yok.")
         explanation["kanitlar"].append(s["kanit"])
@@ -258,11 +266,16 @@ def evaluate(title: str, description: str, fields: dict, profile: Profile, setti
         if ft in t:
             P = 100
             break
-        words = [x for x in re.split(r"[\s\-/]+", ft) if len(x) > 2]
-        overlap = sum(1 for x in words if x in t) / max(1, len(words))
+        words = [x for x in re.split(r"[\s\-/]+", ft) if len(x) > 2 and x not in GENERIC_ROLE and x not in WEAK_KW]
+        if not words:
+            continue
+        overlap = sum(1 for x in words if re.search(r"(?<![a-z])" + re.escape(x), t)) / len(words)
         P = max(P, round(40 + 50 * overlap) if overlap >= 0.5 else P)
-    if P < 65 and any(re.search(r"(?<![a-z])" + re.escape(fold(k)), t) for k in profile.title_keywords):
+    strong_kw = [k for k in profile.title_keywords if fold(k) not in WEAK_KW]
+    if P < 65 and any(re.search(r"(?<![a-z])" + re.escape(fold(k)), t) for k in strong_kw):
         P = 65
+    elif P < 45 and any(re.search(r"(?<![a-z])" + re.escape(fold(k)), t) for k in profile.title_keywords):
+        P = 45
 
     # Konum
     tier = location_tier(city, profile, fields, work_model)
@@ -274,7 +287,7 @@ def evaluate(title: str, description: str, fields: dict, profile: Profile, setti
         explanation["dikkat"].append("İlan yakın bölgende değil; özel sektörde taşınmak istemediğini belirttin.")
 
     others = [c for c in checks if c.name not in ("Eğitim", "Deneyim")]
-    O = round(sum(STATUS_SCORE[c.status] for c in others) / len(others)) if others else 80
+    O = round(sum(STATUS_SCORE[c.status] for c in others) / len(others)) if others else 70
 
     sub = {"egitim": E, "teknik": T, "pozisyon": P, "deneyim": D, "konum": K, "diger": O}
     score = round(sum(sub[k] * float(w[k]) for k in sub), 1)

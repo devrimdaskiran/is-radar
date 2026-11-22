@@ -25,7 +25,7 @@ PROGRAM_PATTERNS = [
 ]
 BROAD_ONLISANS = (r"(?:on ?lisans|onlisans)[^.\n]{0,80}(?:herhangi bir|tum|butun)[^.\n]{0,40}(?:bolum|program|alan)|"
                   r"(?:herhangi bir|tum|butun) (?:on ?lisans|onlisans) program|bolum (?:sarti|ayrimi) (?:aranmaz|yoktur|olmaksizin)|"
-                  r"(?:on ?lisans|onlisans) mezunu (?:olmak|adaylar|[\d.]+ (?:erkek|kadin))|(?:on ?lisans|onlisans) mezunlari (?:icin|basvurabilir)")
+                  r"(?:on ?lisans|onlisans) mezunu (?:[\d.]+ (?:erkek|kadin))")
 SPECIAL = [
     ("POMEM (Polis Meslek Eğitim Merkezi)", r"pomem|polis meslek egitim"),
     ("Astsubay temini", r"astsubay"),
@@ -54,6 +54,34 @@ def find_deadline(text: str) -> str | None:
     return None
 
 
+EDU_CTX = r"mezun|program|bolum|teknolojisi|teknikeri|teknikerligi|teknisyen|on ?lisans|onlisans|meslek yuksek|lise|alan(?:in|i)dan"
+NOT_DEPT = r"elektronik (?:ortam|posta|imza|basvuru|yolla|sistem|tebligat|belge)|e-?devlet|elektrik (?:fatura|kesinti|abone)"
+
+
+def program_hits(text: str) -> list[tuple[str, str]]:
+    """Adayın programlarının ilanda EĞİTİM ŞARTI olarak geçtiği cümleler (mühendislik bölümleri sayılmaz)."""
+    hits = []
+    for name, pat in PROGRAM_PATTERNS:
+        for s in sentences(text):
+            fs = fold(s)
+            if not re.search(EDU_CTX, fs):
+                continue
+            # lisans / mühendislik bölümlerini sayan cümleler (ön lisans geçmiyorsa) senin için değil
+            if re.search(r"en az (?:dort|4) yillik|muhendislik|fakultelerin|(?<!on )(?<![a-z])lisans(?![a-z])", fs) and \
+                    not re.search(r"on ?lisans|onlisans|meslek yuksek|myo|teknikerlik", fs):
+                continue
+            clean = re.sub(NOT_DEPT, " ", fs)
+            for m in re.finditer(pat, clean):
+                tail = clean[m.end():m.end() + 25]
+                if re.match(r"\s*(?:ve [a-z]+ )?(?:muhendis|bolumu \(lisans|lisans)", tail):
+                    continue
+                hits.append((name, s.strip()[:300]))
+                break
+            if hits and hits[-1][0] == name:
+                break
+    return hits
+
+
 def _quote(text: str, pattern: str) -> str | None:
     for s in sentences(text):
         if re.search(pattern, fold(s)):
@@ -76,7 +104,7 @@ def evaluate_kamu(title: str, description: str, fields: dict, profile: Profile, 
           "basvuru": "", "dikkat": [], "kanitlar": []}
 
     # --- İlgililik
-    programs = [(n, _quote(text, p)) for n, p in PROGRAM_PATTERNS if re.search(p, ft)]
+    programs = program_hits(text)
     broad = re.search(BROAD_ONLISANS, ft)
     specials = [(n, _quote(text, p)) for n, p in SPECIAL if re.search(p, ft)]
     rel = 0
@@ -100,9 +128,17 @@ def evaluate_kamu(title: str, description: str, fields: dict, profile: Profile, 
     # --- Eğitim seviyesi
     edu = fields.get("egitim") or {}
     levels = set(edu.get("seviyeler", []))
-    if levels and levels <= {"lisans", "yuksek_lisans"}:
+    onlisans_kadro = re.search(r"(?:on ?lisans|onlisans|meslek yuksek ?okul|myo)[^.\n]{0,60}(?:mezun|program|kadro|pozisyon|\))|"
+                               r"\((?:on ?lisans|onlisans)\)|(?:programci|tekniker|teknisyen)[^.\n]{0,15}\(on ?lisans", ft)
+    explicit_lisans = re.search(r"en az (?:dort|4) yillik|en az lisans|(?:4|dort) yillik (?:lisans )?(?:egitim veren|fakulte)", ft)
+    if explicit_lisans and not onlisans_kadro and not broad:
+        checks.append(Check("Eğitim", NO, "İlan en az 4 yıllık (lisans) mezuniyet istiyor; ön lisans diploman yetmiyor.",
+                            _quote(text, r"en az (?:dort|4) yillik|en az lisans|(?:4|dort) yillik")))
+    elif levels and levels <= {"lisans", "yuksek_lisans"}:
         checks.append(Check("Eğitim", NO, "İlandaki kadrolar yalnızca lisans mezunlarına açık görünüyor.", edu.get("kanit")))
     elif "on_lisans" in levels or broad:
+        if not programs and not broad:
+            rel = min(rel, 15)   # ön lisans kadrosu var ama senin bölümün geçmiyor: düşük öncelik
         checks.append(Check("Eğitim", OK if programs or broad else VERIFY,
                             "Ön lisans mezunlarına kadro var." + ("" if programs or broad else " Bölümünün kabul edildiğini doğrula."),
                             edu.get("kanit")))

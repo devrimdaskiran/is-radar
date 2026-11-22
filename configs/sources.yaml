@@ -100,10 +100,10 @@ kaynaklar:
       - {ad: "memurlar.net – Mahalli (belediye)", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/mahalli-ilanlari/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
       - {ad: "memurlar.net – Genel ilanlar", kaynak: memurlar.net, url: "https://ilan.memurlar.net/kategori/genel-ilanlar/?Expire=false", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
       - {ad: "memurlar.net – Günün ilanları", kaynak: memurlar.net, url: "https://ilan.memurlar.net/", ilan_deseni: "ilan\\.memurlar\\.net/ilan/(\\d+)/"}
-      - {ad: "Polis Akademisi (POMEM/PMYO)", kaynak: pa.edu.tr, kurum: "Polis Akademisi", url: "https://www.pa.edu.tr/", anahtar: ["pomem", "pmyo", "alim", "aday belirleme", "basvuru"]}
+      - {ad: "Polis Akademisi (POMEM/PMYO)", kaynak: pa.edu.tr, kurum: "Polis Akademisi", url: "https://pa.edu.tr/", anahtar: ["pomem", "pmyo", "alim", "aday belirleme", "basvuru"]}
       - {ad: "MSB Personel Temin", kaynak: msb, kurum: "Millî Savunma Bakanlığı", url: "https://personeltemin.msb.gov.tr/", anahtar: ["alim", "temin", "ilan", "isci", "memur", "astsubay", "uzman erbas", "sozlesmeli"]}
       - {ad: "MİT Kariyer", kaynak: mit, kurum: "Millî İstihbarat Teşkilatı", url: "https://www.mit.gov.tr/kariyer.html", ilan_deseni: "mit\\.gov\\.tr/((?:ozgecmis-gonder_[a-z\\-]+_\\d+)|havacilik-teknisyeni|istihbarat-uzmani)\\.html"}
-      - {ad: "Kariyer Kapısı (Kamu İşe Alım)", kaynak: kariyerkapisi, url: "https://www.kariyerkapisi.gov.tr/isealim", anahtar: ["alim", "ilan", "personel", "isci", "tekniker", "teknisyen"]}
+      - {ad: "Kariyer Kapısı (Kamu İşe Alım)", kaynak: kariyerkapisi, url: "https://isealimkariyerkapisi.cbiko.gov.tr/", anahtar: ["alim", "ilan", "personel", "isci", "tekniker", "teknisyen"]}
       - {ad: "Kamu İlan Portalı (SBB)", kaynak: kamuilan, url: "https://kamuilan.sbb.gov.tr/", anahtar: ["alim", "ilan", "personel", "isci"]}
 
   # 7) Gemini + Google ile kamu ilanı keşfi (Kariyer Kapısı, İŞKUR, ilan.gov.tr, belediye ve üniversite siteleri)

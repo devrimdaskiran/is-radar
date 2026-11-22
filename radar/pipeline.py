@@ -97,6 +97,11 @@ def upsert(s: Session, p: RawPosting) -> tuple[Job, str]:
 
 def evaluate_job(s: Session, job: Job, profile: Profile, settings: dict, analyzer: Analyzer | None,
                  today: datetime | None = None) -> Evaluation | None:
+    if job.sector != "kamu":
+        from .textnorm import split_title_company
+        t2, comp = split_title_company(job.title)
+        if comp:
+            job.title, job.company = t2, job.company or comp
     detail = (job.fields or {}).get("_detay", "tam")
     fields = extract_fields(job.title, job.description or "", today)
     fields["_detay"] = detail

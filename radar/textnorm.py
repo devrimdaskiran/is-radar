@@ -53,3 +53,26 @@ def contains_any(folded_text: str, needles: list[str]) -> str | None:
         if re.search(pat, folded_text):
             return n
     return None
+
+
+ROLE_NOUNS = r"(personeli|elemani|teknisyeni|teknikeri|iscisi|operatoru|uzmani|muhendisi|sorumlusu|ustasi|gorevlisi|" \
+             r"temsilcisi|sefi|muduru|asistani|sekreteri|teknisyen|tekniker|isci|operator|yardimcisi|kalfasi|" \
+             r"elektrikcisi|elektrikci|montajcisi|stajyeri|danismani|koordinatoru|amiri|calisani|egitmeni|egitmen|tasarimci|" \
+             r"tasarimcisi|sorumlu|muhasebeci|surucu|sofor|soforu|asci|garson|kasiyer|depocu|tekniker|programci|" \
+             r"gelistirici|analisti|uzman|muhendis)"
+COMPANY_HINT = r"(a\.? ?s\.?|ltd|sti|san\.?|tic\.?|sanayi|ticaret|holding|grup|limited|anonim|as)(?![a-z])"
+
+
+def split_title_company(title: str) -> tuple[str, str | None]:
+    """'Bakım Onarım Elemanı TANDOĞAN PLASTİK ... LTD ŞTİ' → ('Bakım Onarım Elemanı', 'TANDOĞAN PLASTİK ... LTD ŞTİ').
+    Şirket eki yoksa unvana dokunmaz."""
+    words = (title or "").split()
+    if len(words) < 3 or not re.search(COMPANY_HINT, fold(title)):
+        return title, None
+    cut = None
+    for i, w in enumerate(words[:-1]):
+        if re.fullmatch(ROLE_NOUNS, fold(w).strip(".,;:()")):
+            cut = i + 1
+    if cut and cut < len(words):
+        return " ".join(words[:cut]), " ".join(words[cut:])
+    return title, None

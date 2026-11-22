@@ -95,3 +95,26 @@ def test_explanation_has_evidence(postings, profile, settings):
     exp = next(c for c in r.checks if c.name == "Deneyim")
     assert "en az 3 yıl" in exp.evidence
     assert exp.evidence in p["description"]   # kanıt ilandan birebir
+
+
+def test_regressions_from_first_live_run(profile, settings):
+    """İlk canlı turda yanlış gönderilen ilanlardan çıkarılan testler."""
+    from radar.kamu import evaluate_kamu
+    from radar.textnorm import split_title_company
+    # 1) Şirket adındaki "Elektronik" unvan sanılmamalı; satış ilanı engellenmeli
+    t, comp = split_title_company("Satış ve Tanıtım Personeli Hakman Elektronik San. ve Tic. AŞ")
+    assert t == "Satış ve Tanıtım Personeli" and "Hakman" in comp
+    f = extract_fields(t, "")
+    assert prefilter(t, "", profile, f, None, today=TODAY)[0] is False
+    # 2) Mühendis unvanı ön lisansa açık değil
+    f = extract_fields("Elektrik-Elektronik Mühendisi", "Gaziantep fabrikamızda çalışacak.")
+    r = evaluate("Elektrik-Elektronik Mühendisi", "Gaziantep fabrikamızda çalışacak.", f, profile, settings, city="Gaziantep", today=TODAY)
+    assert r.gate == "Başvurulamaz"
+    # 3) Kamu: 'en az dört yıllık ... elektrik-elektronik mühendislikleri' + başka bölüme ön lisans kadrosu
+    body = ("3 sözleşmeli çözümleyici, 4 sözleşmeli programcı (ön lisans) alınacaktır.\n"
+            "Lisans mezunları için KPSSP1, ön lisans mezunları için KPSSP93 puan türünde en az 60 puan almış olmak.\n"
+            "1.En az dört yıllık bilgisayar, elektrik, elektronik, elektrik-elektronik mühendislikleri ile fakültelerin matematik bölümlerinden mezun olmak.\n"
+            "2.Ön lisans için bilgisayar programcılığı programından mezun olmak.\n"
+            "Başvurular elektronik ortamda alınacaktır.")
+    r = evaluate_kamu("Sayıştay 16 sözleşmeli personel alacak", body, extract_fields("Sayıştay", body), profile, settings, today=TODAY)
+    assert r.score < settings["bildirim"]["kamu_min_puan"]
