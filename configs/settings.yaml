@@ -29,6 +29,7 @@ yapay_zeka:
   saglayici: gemini       # gemini | claude
   model: ""               # boş = otomatik seçim
   gunluk_max_analiz: 80   # ücretsiz kotayı aşmamak için
+  tur_basina_max: 15      # bir turda en fazla analiz (tur kısa sürsün)
   gunluk_limit_usd: 0.50  # yalnızca ücretli sağlayıcıda (claude) anlamlı
   aylik_limit_usd: 10.0
   fiyat_girdi_1m: 0.0

@@ -214,9 +214,14 @@ def run_collector(s: Session, col: Collector) -> tuple[list[RawPosting], str | N
 
 
 def scan(s: Session, collectors: list[Collector], profile: Profile, settings: dict, analyzer: Analyzer | None = None,
-         today: datetime | None = None) -> ScanReport:
+         today: datetime | None = None, deadline: datetime | None = None) -> ScanReport:
+    """deadline: bu zamandan sonra yeni kaynağa başlanmaz, yapay zekâ analizi atlanır (tur süresini sınırlamak için).
+    Atlanan kaynaklar bir sonraki turda zamanı geldiği için yeniden denenir."""
     rep = ScanReport(errors=[])
     for col in collectors:
+        if deadline and datetime.now() > deadline:
+            rep.errors.append(f"{col.name}: tur süresi doldu, bir sonraki turda taranacak")
+            continue
         items, err = run_collector(s, col)
         if err:
             rep.sources_failed += 1
@@ -237,7 +242,8 @@ def scan(s: Session, collectors: list[Collector], profile: Profile, settings: di
                 new_count += 1
             elif change == "güncellendi":
                 rep.updated_jobs += 1
-            ev = evaluate_job(s, job, profile, settings, analyzer, today)
+            use_ai = analyzer if not (deadline and datetime.now() > deadline) else None
+            ev = evaluate_job(s, job, profile, settings, use_ai, today)
             if ev:
                 rep.evaluated += 1
                 if maybe_queue(s, job, ev, settings, change):

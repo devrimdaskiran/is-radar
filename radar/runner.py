@@ -398,35 +398,44 @@ def main() -> int:
     r = Runner(app, tg)
     exit_code = 0
     try:
-        with app.Session() as s:
-            first = not getset(s, "tg.commands_set")
-            if first:
-                tg.set_commands(COMMANDS)
-                set_setting(s, "tg.commands_set", True)
-                s.commit()
-            handled = r.handle_updates(s)
+        def talk(s, final: bool = False):
+            """Telegram'la konuş: mesajları cevapla, hoş geldin ve bekleyen ilanları gönder."""
+            n = r.handle_updates(s)
             r.chat = r.owner(s)
-            if not r.chat:
-                log.warning("Telegram sohbeti henüz bağlı değil: Telegram'da botuna /start yaz. (bot: @%s)", "***")
-            paused = bool(getset(s, "radar.paused", False))
-        rep = None
-        if not paused:
-            from .pipeline import scan
-            with app.Session() as s:
-                rep = scan(s, app.due_collectors(), app.profile, app.settings(), app.analyzer(), today=now())
-            log.info("Tarama: kaynak ok=%d hata=%d alınan=%d yeni=%d sıraya=%d", rep.sources_ok, rep.sources_failed,
-                     rep.fetched, rep.new_jobs, rep.queued)
-            for e in rep.errors or []:
-                log.warning("Kaynak: %s", e)
-        with app.Session() as s:
+            sent = 0
             if r.chat:
                 if not getset(s, "tg.welcomed"):
                     r.send(r.welcome(s))
                     set_setting(s, "tg.welcomed", True)
                 sent = r.send_notifications(s)
-                r.daily(s)
-                r.reminders(s)
-                log.info("Telegram: %d mesaj işlendi, %d ilan gönderildi.", handled, sent)
+                if final:
+                    r.daily(s)
+                    r.reminders(s)
+            s.commit()
+            return n, sent
+
+        with app.Session() as s:
+            if not getset(s, "tg.commands_set"):
+                tg.set_commands(COMMANDS)
+                set_setting(s, "tg.commands_set", True)
+                s.commit()
+            handled, sent0 = talk(s)            # önce hızlı cevap: tarama beklenmez
+            if not r.chat:
+                log.warning("Telegram sohbeti henüz bağlı değil: Telegram'da botuna /start yaz.")
+            paused = bool(getset(s, "radar.paused", False))
+        if not paused:
+            from .pipeline import scan
+            budget = float(os.environ.get("RADAR_SCAN_MINUTES", "14"))
+            with app.Session() as s:
+                rep = scan(s, app.due_collectors(), app.profile, app.settings(), app.analyzer(), today=now(),
+                           deadline=datetime.now() + timedelta(minutes=budget))
+            log.info("Tarama: kaynak ok=%d hata=%d alınan=%d yeni=%d sıraya=%d", rep.sources_ok, rep.sources_failed,
+                     rep.fetched, rep.new_jobs, rep.queued)
+            for e in rep.errors or []:
+                log.warning("Kaynak: %s", e)
+        with app.Session() as s:
+            handled2, sent = talk(s, final=True)    # tarama sırasında gelen mesajlar + yeni ilanlar
+            log.info("Telegram: %d mesaj işlendi, %d ilan gönderildi.", handled + handled2, sent0 + sent)
             prune(s)
             s.commit()
     except TelegramError as e:

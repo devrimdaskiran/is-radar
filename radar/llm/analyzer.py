@@ -91,6 +91,7 @@ class Analyzer:
     def __init__(self, provider: Provider | None, settings: dict):
         self.provider = provider
         self.cfg = settings.get("yapay_zeka", {})
+        self.calls_this_run = 0
 
     @property
     def enabled(self) -> bool:
@@ -107,6 +108,9 @@ class Analyzer:
             return cached.response
         now = datetime.now()
         day0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        if self.calls_this_run >= int(self.cfg.get("tur_basina_max", 15)):
+            raise BudgetExceeded("Bu turdaki yapay zekâ analiz sınırı doldu; kalanlar kural tabanlı değerlendirildi.")
+        self.calls_this_run += 1
         n_today = s.query(LlmUsage).filter(LlmUsage.at >= day0).count()
         if n_today >= int(self.cfg.get("gunluk_max_analiz", 80)):
             raise BudgetExceeded("Günlük yapay zekâ analiz sınırına ulaşıldı; kural tabanlı modda devam ediliyor.")
