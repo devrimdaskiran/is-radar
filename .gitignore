@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+data/
+logs/
+.pytest_cache/
+# Kişisel profil yalnızca şifreli olarak (profile.yaml.enc) depoya girer
+configs/profile.yaml
+state/radar.db.enc

@@ -1,0 +1,37 @@
+# AI Career Radar - Varsayılan ayarlar
+# Telegram'daki /settings ile değiştirilenler veritabanında saklanır ve bunların üzerine yazılır.
+
+puan_agirliklari:        # toplam 1.0
+  egitim: 0.30
+  teknik: 0.25
+  pozisyon: 0.15
+  deneyim: 0.10
+  konum: 0.10
+  diger: 0.10
+
+bildirim:
+  aktif: true
+  min_puan: 60            # bu puanın altı bildirilmez
+  anlik: false            # true: sessiz saatleri yok say
+  sessiz_baslangic: "23:00"
+  sessiz_bitis: "08:00"
+  gunluk_ozet_saati: "20:30"
+
+tarama:
+  aralik_dakika: 30
+  ilan_max_yas_gun: 45
+
+yapay_zeka:
+  # Gemini ücretsiz katmanı (Pipaloo'daki GEMINI_API_KEY ile aynı anahtar kullanılabilir).
+  # Anahtar yoksa sistem otomatik olarak ücretsiz kural motoruyla çalışır.
+  aktif: true
+  saglayici: gemini       # gemini | claude
+  model: ""               # boş = otomatik seçim
+  gunluk_max_analiz: 80   # ücretsiz kotayı aşmamak için
+  gunluk_limit_usd: 0.50  # yalnızca ücretli sağlayıcıda (claude) anlamlı
+  aylik_limit_usd: 10.0
+  fiyat_girdi_1m: 0.0
+  fiyat_cikti_1m: 0.0
+
+yedekleme:
+  saklama_gun: 14

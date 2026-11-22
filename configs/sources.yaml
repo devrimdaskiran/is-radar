@@ -1,0 +1,80 @@
+# AI Career Radar - Kaynaklar
+# Her kaynak ayrı modüldür; biri hata verirse diğerleri çalışmaya devam eder.
+# Gerçek durum Telegram'da /sources ile görünür (🟢 çalışıyor, 🟡 anahtar yok, 🔴 hata).
+
+kaynaklar:
+  # 1) İş sitelerinin il bazlı ilan listeleri (anahtar gerektirmez).
+  #    robots.txt'ye uyulur, istekler arasında 3 sn beklenir, yalnızca ilgili unvanların detayı açılır.
+  - ad: site_listeleri
+    tur: site_listing
+    aktif: true
+    siklik_dakika: 60
+    bekleme_sn: 3
+    max_detay: 30
+    iller: ["gaziantep", "kahramanmaras", "osmaniye", "hatay", "adana", "kilis"]
+    siteler:
+      - ad: kariyer.net
+        liste_url: "https://www.kariyer.net/is-ilanlari/{il}"
+        sayfa: 1
+        ilan_deseni: "kariyer\\.net/is-ilani/[a-z0-9\\-]+-(\\d{5,})$"
+      - ad: eleman.net
+        liste_url: "https://www.eleman.net/is-ilanlari/{il}?sy={sayfa}"
+        ilk_sayfa_url: "https://www.eleman.net/is-ilanlari/{il}"
+        sayfa: 2
+        ilan_deseni: "eleman\\.net/is-ilani/[a-z0-9\\-]+-i(\\d{5,})$"
+      - ad: isinolsun
+        liste_url: "https://isinolsun.com/{il}-is-ilanlari"
+        sayfa: 1
+        ilan_deseni: "isinolsun\\.com/is-ilani/[a-z0-9\\-]+[/-](\\d{4,})"
+
+  # 2) Gemini + Google Arama ile keşif (GEMINI_API_KEY). Bağlantılar tek tek açılıp doğrulanır.
+  - ad: gemini_arama
+    tur: gemini_search
+    aktif: true
+    siklik_dakika: 240
+    gun: 3
+    max_dogrulama: 15
+    izinli_alanlar: ["kariyer.net", "eleman.net", "secretcv.com", "yenibiris.com", "isinolsun.com", "iskur.gov.tr",
+                     "aselsan.com", "tusas.com", "roketsan.com", "baykartech.com", "linkedin.com/jobs"]
+    aramalar:
+      - "Gaziantep mekatronik teknikeri iş ilanı"
+      - "Gaziantep elektrik elektronik teknisyeni bakım iş ilanı"
+      - "Gaziantep otomasyon teknisyeni iş ilanı"
+      - "Kahramanmaraş Osmaniye Adana mekatronik elektrik teknikeri iş ilanı"
+
+  # 3) Jooble resmi API (isteğe bağlı: JOOBLE_API_KEY)
+  - ad: jooble
+    tur: jooble_api
+    aktif: true
+    siklik_dakika: 180
+    aramalar:
+      - {kelime: "mekatronik", konum: "Gaziantep"}
+      - {kelime: "elektrik elektronik teknisyeni", konum: "Gaziantep"}
+      - {kelime: "bakım teknikeri", konum: "Gaziantep"}
+      - {kelime: "otomasyon teknisyeni", konum: "Gaziantep"}
+      - {kelime: "mekatronik", konum: "Kahramanmaraş"}
+      - {kelime: "elektrik teknikeri", konum: "Adana"}
+
+  # 4) Gmail'e gelen iş alarmı e-postaları (isteğe bağlı: GMAIL_ADDRESS + GMAIL_APP_PASSWORD)
+  #    LinkedIn ve Indeed ilanları ancak bu yolla güvenle alınabilir.
+  - ad: eposta_alarmlari
+    tur: imap_alerts
+    aktif: true
+    siklik_dakika: 60
+    gonderenler:
+      kariyer.net: ["kariyer.net"]
+      linkedin: ["linkedin.com"]
+      indeed: ["indeed.com"]
+      eleman.net: ["eleman.net"]
+      secretcv: ["secretcv.com"]
+      yenibiris: ["yenibiris.com"]
+    gun_geriye: 3
+
+  # 5) Şirket kariyer sayfaları (JSON-LD). Adres ekleyip aktif: true yapınca çalışır.
+  - ad: kariyer_sayfalari
+    tur: career_jsonld
+    aktif: false
+    siklik_dakika: 360
+    sirketler:
+      - {ad: "ASELSAN", liste_url: "", ilan_link_deseni: ""}
+      - {ad: "Baykar", liste_url: "", ilan_link_deseni: ""}

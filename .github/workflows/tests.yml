@@ -1,0 +1,22 @@
+name: Testler
+
+on:
+  push:
+    paths: ["radar/**", "tests/**", "configs/**"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -q -r requirements-actions.txt pytest python-telegram-bot[job-queue]
+      - name: Testleri çalıştır
+        env:
+          RADAR_KEY: ${{ secrets.RADAR_KEY }}
+        run: python -m pytest -q
