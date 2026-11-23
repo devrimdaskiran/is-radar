@@ -178,7 +178,7 @@ def evaluate_kamu(title: str, description: str, fields: dict, profile: Profile, 
         if dob:
             y, mo, d = (int(x) for x in str(dob).split("-"))
             age = (today.date() - date(y, mo, d)).days / 365.25
-            checks.append(Check("Yaş", OK if age < lim else NO, f"Yaş sınırı {lim}; sen {age:.0f} yaşındasın.", q))
+            checks.append(Check("Yaş", OK if age < lim else NO, f"Yaş sınırı {lim}; sen {int(age)} yaşındasın.", q))
         else:
             checks.append(Check("Yaş", VERIFY, f"{lim} yaş sınırı var; profilinde doğum tarihi yok.", q))
 

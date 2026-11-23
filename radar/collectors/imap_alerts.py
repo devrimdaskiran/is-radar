@@ -29,6 +29,7 @@ LINK_RULES = [
     ("eleman.net", re.compile(r"eleman\.net/is-ilani/([a-z0-9\-]+-i(\d+))"), 2, "https://www.eleman.net/is-ilani/{full}"),
     ("secretcv", re.compile(r"secretcv\.com/is-ilanlari/([a-z0-9\-]+-(\d+))"), 2, "https://www.secretcv.com/is-ilanlari/{full}"),
     ("yenibiris", re.compile(r"yenibiris\.com/is-ilanlari/([a-z0-9\-]+-(\d+))"), 2, "https://www.yenibiris.com/is-ilanlari/{full}"),
+    ("isinolsun", re.compile(r"isinolsun\.com/((?:is-ilani|ilan)/[a-z0-9\-/]*?(\d{5,}))"), 2, "https://isinolsun.com/{full}"),
 ]
 GENERIC_ANCHOR = {"basvur", "hemen basvur", "ilani incele", "ilani gor", "tumunu gor", "tum ilanlar", "detay",
                   "view job", "apply", "see all jobs", "goruntule", "daha fazla", "incele"}

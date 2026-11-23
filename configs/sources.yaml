@@ -74,6 +74,7 @@ kaynaklar:
       eleman.net: ["eleman.net"]
       secretcv: ["secretcv.com"]
       yenibiris: ["yenibiris.com"]
+      isinolsun: ["isinolsun.com"]
     gun_geriye: 3
 
   # 5) Şirket kariyer sayfaları (JSON-LD). Adres ekleyip aktif: true yapınca çalışır.

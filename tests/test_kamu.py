@@ -47,7 +47,9 @@ def test_lisans_only_rejected(profile, settings):
 
 
 def test_pomem_kpss_and_age_need_verification(profile, settings):
-    r = ev(POMEM, profile, settings)
+    from radar.profile import load_profile
+    empty = load_profile({**profile.raw, "kamu": {}})
+    r = ev(POMEM, empty, settings)
     st = {c.name: c.status for c in r.checks}
     assert st["KPSS"] == "Doğrulanmalı" and st["Yaş"] == "Doğrulanmalı"
     assert r.gate == "Doğrulanmalı" and r.score >= 55
