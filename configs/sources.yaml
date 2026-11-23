@@ -65,7 +65,7 @@ kaynaklar:
   #    LinkedIn ve Indeed ilanları ancak bu yolla güvenle alınabilir.
   - ad: eposta_alarmlari
     tur: imap_alerts
-    aktif: true
+    aktif: false   # Ana Gmail hesabında Gelişmiş Koruma açık: uygulama şifresi verilmiyor. Ayrı bir Gmail ile açılabilir.
     siklik_dakika: 60
     gonderenler:
       kariyer.net: ["kariyer.net"]
