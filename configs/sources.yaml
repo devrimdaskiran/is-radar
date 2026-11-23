@@ -14,7 +14,10 @@ kaynaklar:
     iller: ["gaziantep", "kahramanmaras", "osmaniye", "hatay", "adana", "kilis"]
     siteler:
       - ad: kariyer.net
-        liste_url: "https://www.kariyer.net/is-ilanlari/{il}"
+        # Arama sayfaları: il + meslek (ör. /is-ilanlari/gaziantep-elektrik+teknisyeni)
+        liste_url: "https://www.kariyer.net/is-ilanlari/{il}-{kelime}"
+        kelimeler: ["mekatronik", "elektrik+teknisyeni", "elektrik+teknikeri", "bakim+teknisyeni", "otomasyon", "elektronik+teknisyeni", "teknik+servis"]
+        iller: ["gaziantep", "kahramanmaras", "osmaniye", "adana"]
         sayfa: 1
         ilan_deseni: "kariyer\\.net/is-ilani/[a-z0-9\\-]+-(\\d{5,})$"
       - ad: eleman.net
@@ -23,6 +26,7 @@ kaynaklar:
         sayfa: 2
         ilan_deseni: "eleman\\.net/is-ilani/[a-z0-9\\-]+-i(\\d{5,})$"
       - ad: isinolsun
+        aktif: false   # sayfa yapısı ilan bağlantısı vermiyor; İşin Olsun ilanları Gmail alarmıyla alınabilir
         liste_url: "https://isinolsun.com/{il}-is-ilanlari"
         sayfa: 1
         ilan_deseni: "isinolsun\\.com/is-ilani/[a-z0-9\\-]+[/-](\\d{4,})"
@@ -30,7 +34,7 @@ kaynaklar:
   # 2) Gemini + Google Arama ile keşif (GEMINI_API_KEY). Bağlantılar tek tek açılıp doğrulanır.
   - ad: gemini_arama
     tur: gemini_search
-    aktif: true
+    aktif: false   # Gemini ücretsiz katmanında Google Arama kotası yok (HTTP 429). Faturalandırma açılırsa true yapılabilir.
     siklik_dakika: 240
     gun: 3
     max_dogrulama: 15
@@ -109,7 +113,7 @@ kaynaklar:
   # 7) Gemini + Google ile kamu ilanı keşfi (Kariyer Kapısı, İŞKUR, ilan.gov.tr, belediye ve üniversite siteleri)
   - ad: gemini_kamu
     tur: gemini_search
-    aktif: true
+    aktif: false   # aynı sebep: ücretsiz katmanda Google Arama kotası yok
     siklik_dakika: 360
     sektor: kamu
     gun: 5

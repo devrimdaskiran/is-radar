@@ -86,14 +86,18 @@ class SiteListingCollector(Collector):
             site_ok = False
             fails = 0
             detail_blocked = False
-            for city in self.cfg.get("iller", []):
+            targets = []
+            for city in site.get("iller") or self.cfg.get("iller", []):
+                for kw in site.get("kelimeler") or [None]:
+                    targets.append((city, kw))
+            for city, kw in targets:
                 if fails >= 2 and not site_ok:
                     errors.append(f"{site['ad']}: üst üste erişilemedi, bu tur atlandı")
                     break
                 for page in range(1, int(site.get("sayfa", 1)) + 1):
-                    url = site["liste_url"].format(il=city, sayfa=page)
+                    url = site["liste_url"].format(il=city, sayfa=page, kelime=kw or "")
                     if page == 1 and "{sayfa}" in site["liste_url"] and site.get("ilk_sayfa_url"):
-                        url = site["ilk_sayfa_url"].format(il=city)
+                        url = site["ilk_sayfa_url"].format(il=city, kelime=kw or "")
                     try:
                         r = self.http.get(url)
                     except CollectorError as e:
@@ -115,7 +119,7 @@ class SiteListingCollector(Collector):
                         title = a.get("title") or a.get_text(" ", strip=True)
                         if href not in links or len(title) > len(links[href][1]):
                             links[href] = (m.group(1), title.strip())
-                    if not links and page == 1:
+                    if not links and page == 1 and not kw:
                         self.warnings.append(f"{site['ad']}/{city}: sayfa açıldı ama ilan bağlantısı bulunamadı (site yapısı değişmiş olabilir)")
                     for href, (ext, title) in links.items():
                         key = f"{site['ad']}:{ext}"
